@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medivert - Universal Media Converter</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+            --accent: #4cc9f0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body, html {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--light);
+            color: var(--dark);
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+        
+        /* Modern glassmorphism navigation */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 15px 5%;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 500;
+            padding: 8px 12px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        
+        .nav-links a:hover, .nav-links a.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 5%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(67, 97, 238, 0.1) 0%, rgba(255,255,255,0) 70%);
+            z-index: -1;
+            animation: pulse 15s infinite alternate;
+        }
+        
+        @keyframes pulse {
+            0% { transform: translate(0, 0); }
+            50% { transform: translate(25%, 25%); }
+            100% { transform: translate(-25%, -25%); }
+        }
+        
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+            color: #555;
+        }
+        
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--primary);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(67, 97, 238, 0.2);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(67, 97, 238, 0.3);
+            background: var(--secondary);
+        }
+        
+        /* Tools Section */
+        .tools-section {
+            padding: 100px 5%;
+            background: white;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .section-header h2 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: var(--dark);
+        }
+        
+        .section-header p {
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto;
+            font-size: 1.1rem;
+        }
+        
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .tool-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            border: 1px solid #eee;
+        }
+        
+        .tool-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tool-icon {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+        
+        .tool-content {
+            padding: 25px;
+        }
+        
+        .tool-content h3 {
+            margin-bottom: 15px;
+            color: var(--dark);
+        }
+        
+        .tool-content p {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        .tool-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .tool-link:hover {
+            color: var(--secondary);
+            gap: 12px;
+        }
+        
+        /* CONVERTER PAGES SECTION - ENHANCED SCALING */
+        .projects-wrapper {
+            width: 100%;
+        }
+        
+        .project-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            border-bottom: 1px solid #e1e4e8;
+            overflow: hidden;
+        }
+        
+        .project-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            /* Enhanced scaling properties */
+            transform-origin: 0 0;
+            -webkit-transform-origin: 0 0;
+            -moz-transform-origin: 0 0;
+            -ms-transform-origin: 0 0;
+        }
+        
+        /* Specific fixes for problematic pages - ENHANCED DIMENSIONS */
+        #image-to-pdf iframe,
+        #image-size iframe,
+        #image-quality iframe {
+            /* Force larger dimensions to fill screen completely */
+            width: 105vw !important;
+            height: 105vh !important;
+            min-width: 105vw;
+            min-height: 105vh;
+            max-width: 105vw;
+            max-height: 105vh;
+            /* Remove any potential margins or padding */
+            margin: 0 !important;
+            padding: 0 !important;
+            /* Position to cover any gaps */
+            position: absolute;
+            top: -2vh;
+            left: -2.5vw;
+            /* Ensure proper scaling */
+            transform: scale(1.02);
+            -webkit-transform: scale(1.02);
+            -moz-transform: scale(1.02);
+            -ms-transform: scale(1.02);
+            transform-origin: center center;
+        }
+        
+        /* Hide any potential overflow issues */
+        .project-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 1;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+        }
+        
+        /* Side navigation dots */
+        .nav-dots {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .nav-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #ddd;
+            margin: 8px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .nav-dot.active {
+            background-color: var(--primary);
+        }
+        
+        /* Simplified Footer */
+        .simple-footer {
+            text-align: center;
+            padding: 20px;
+            background: var(--dark);
+            color: white;
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 1024px) {
+            .nav-links a {
+                font-size: 0.8rem;
+                padding: 8px 10px;
+            }
+            
+            /* Ensure mobile scaling works properly */
+            .project-container iframe {
+                width: 100vw;
+                height: 100vh;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero p {
+                font-size: 1rem;
+            }
+            
+            .section-header h2 {
+                font-size: 2rem;
+            }
+            
+            .nav-dots {
+                display: none;
+            }
+            
+            /* Mobile-specific iframe adjustments */
+            .project-container {
+                width: 100vw;
+                height: 100vh;
+                position: relative;
+            }
+            
+            .project-container iframe {
+                width: 100%;
+                height: 100%;
+                transform: none;
+            }
+            
+            /* Mobile adjustments for problematic pages */
+            #image-to-pdf iframe,
+            #image-size iframe,
+            #image-quality iframe {
+                width: 102vw !important;
+                height: 102vh !important;
+                top: -1vh;
+                left: -1vw;
+                transform: scale(1.01);
+            }
+        }
+        
+        /* Additional CSS to hide Motion Suss branding if visible */
+        .project-container iframe[src*="Image-to-PDF-Converter"],
+        .project-container iframe[src*="Image-size-customizer"],
+        .project-container iframe[src*="Image-quality-enhancer"] {
+            /* Ensure these specific iframes scale properly */
+            object-fit: cover;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Modern Navigation -->
+    <nav class="top-nav">
+        <a href="#home" class="logo">
+            <span>Medivert</span>
+        </a>
+        <div class="nav-links">
+            <a href="#home" class="active">Home</a>
+            <a href="#tools">Tools</a>
+            <a href="#image-converter">Image Converter</a>
+            <a href="#video-converter">Video Converter</a>
+            <a href="#video-to-audio">Video to Audio</a>
+            <a href="#image-to-pdf">Image to PDF</a>
+            <a href="#image-size">Image Size</a>
+            <a href="#image-quality">Image Quality</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <h1>Universal Media Converter</h1>
+        <p>Transform your media files effortlessly with our powerful online tools. Convert, enhance, and customize your images, videos, and audio files in just a few clicks.</p>
+        <a href="#tools" class="cta-button">
+            Explore Tools
+            <i class="fas fa-arrow-down"></i>
+        </a>
+    </section>
+
+    <!-- Tools Section -->
+    <section class="tools-section" id="tools">
+        <div class="section-header">
+            <h2>Our Powerful Conversion Tools</h2>
+            <p>Select from our range of specialized media conversion tools designed to meet all your needs</p>
+        </div>
+        <div class="tools-grid">
+            <!-- Tool Card 1 -->
+            <div class="tool-card">
+                <div class="tool-icon">
+                    <i class="fas fa-image"></i>
+                </div>
+                <div class="tool-content">
+                    <h3>Universal Image Converter</h3>
+                    <p>Convert between all major image formats including JPG, PNG, WEBP, and more with just one click.</p>
+                    <a href="#image-converter" class="tool-link">
+                        Use Tool
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Tool Card 2 -->
+            <div class="tool-card">
+                <div class="tool-icon">
+                    <i class="fas fa-video"></i>
+                </div>
+                <div class="tool-content">
+                    <h3>Universal Video Converter</h3>
+                    <p>Convert videos between MP4, AVI, MOV, MKV and other popular formats without quality loss.</p>
+                    <a href="#video-converter" class="tool-link">
+                        Use Tool
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Tool Card 3 -->
+            <div class="tool-card">
+                <div class="tool-icon">
+                    <i class="fas fa-music"></i>
+                </div>
+                <div class="tool-content">
+                    <h3>Video to Audio Converter</h3>
+                    <p>Extract audio from videos and save in MP3, WAV, OGG or other audio formats instantly.</p>
+                    <a href="#video-to-audio" class="tool-link">
+                        Use Tool
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Tool Card 4 -->
+            <div class="tool-card">
+                <div class="tool-icon">
+                    <i class="fas fa-file-pdf"></i>
+                </div>
+                <div class="tool-content">
+                    <h3>Image to PDF Converter</h3>
+                    <p>Convert multiple images into a single PDF document with customizable page settings.</p>
+                    <a href="#image-to-pdf" class="tool-link">
+                        Use Tool
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Tool Card 5 -->
+            <div class="tool-card">
+                <div class="tool-icon">
+                    <i class="fas fa-expand"></i>
+                </div>
+                <div class="tool-content">
+                    <h3>Image Size Customizer</h3>
+                    <p>Resize your images to exact dimensions or percentages while maintaining quality.</p>
+                    <a href="#image-size" class="tool-link">
+                        Use Tool
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Tool Card 6 -->
+            <div class="tool-card">
+                <div class="tool-icon">
+                    <i class="fas fa-magic"></i>
+                </div>
+                <div class="tool-content">
+                    <h3>Image Quality Enhancer</h3>
+                    <p>Improve your image quality, remove noise, and enhance details automatically.</p>
+                    <a href="#image-quality" class="tool-link">
+                        Use Tool
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Converter Pages Section - ENHANCED SCALING -->
+    <div class="projects-wrapper">
+        <!-- Universal Image Converter -->
+        <div class="project-container" id="image-converter">
+            <iframe src="https://motionsuss.github.io/Universal-image-converter/" loading="lazy"></iframe>
+        </div>
+        
+        <!-- Universal Video Converter -->
+        <div class="project-container" id="video-converter">
+            <iframe src="https://motionsuss.github.io/Universal-video-converter/" loading="lazy"></iframe>
+        </div>
+        
+        <!-- Video to Audio Converter -->
+        <div class="project-container" id="video-to-audio">
+            <iframe src="https://motionsuss.github.io/Video-to-audio-converter/" loading="lazy"></iframe>
+        </div>
+        
+        <!-- Image to PDF Converter - ENHANCED -->
+        <div class="project-container" id="image-to-pdf">
+            <iframe src="https://motionsuss.github.io/Image-to-PDF-Converter/" loading="lazy"></iframe>
+        </div>
+        
+        <!-- Image Size Customizer - ENHANCED -->
+        <div class="project-container" id="image-size">
+            <iframe src="https://motionsuss.github.io/Image-size-customizer/" loading="lazy"></iframe>
+        </div>
+        
+        <!-- Image Quality Enhancer - ENHANCED -->
+        <div class="project-container" id="image-quality">
+            <iframe src="https://motionsuss.github.io/Image-quality-enhancer/" loading="lazy"></iframe>
+        </div>
+    </div>
+    
+    <!-- Side Navigation Dots -->
+    <div class="nav-dots">
+        <div class="nav-dot active" data-target="home"></div>
+        <div class="nav-dot" data-target="tools"></div>
+        <div class="nav-dot" data-target="image-converter"></div>
+        <div class="nav-dot" data-target="video-converter"></div>
+        <div class="nav-dot" data-target="video-to-audio"></div>
+        <div class="nav-dot" data-target="image-to-pdf"></div>
+        <div class="nav-dot" data-target="image-size"></div>
+        <div class="nav-dot" data-target="image-quality"></div>
+    </div>
+    
+    <!-- Simplified Footer -->
+    <footer class="simple-footer">
+        &copy; 2025 Medivert by Motion Suss. All rights reserved.
+    </footer>
+
+    <script>
+        // Navigation functionality
+        document.querySelectorAll('.nav-links a, .tool-link, .cta-button').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                scrollToSection(targetId);
+            });
+        });
+
+        // Dot navigation click handlers
+        document.querySelectorAll('.nav-dot').forEach(dot => {
+            dot.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                scrollToSection(targetId);
+            });
+        });
+
+        // Function to handle smooth scrolling and active states
+        function scrollToSection(targetId) {
+            const targetElement = document.getElementById(targetId);
+            if (!targetElement) return;
+            
+            // Update active states
+            document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+            document.querySelectorAll('.nav-dot').forEach(dot => dot.classList.remove('active'));
+            
+            // Set active state for the clicked section
+            const navLink = document.querySelector(`.nav-links a[href="#${targetId}"]`);
+            if (navLink) navLink.classList.add('active');
+            
+            const navDot = document.querySelector(`.nav-dot[data-target="${targetId}"]`);
+            if (navDot) navDot.classList.add('active');
+            
+            // Scroll to target
+            targetElement.scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+
+        // Update active states on scroll
+        window.addEventListener('scroll', function() {
+            const sections = [
+                'home', 'tools', 
+                'image-converter', 'video-converter', 'video-to-audio', 
+                'image-to-pdf', 'image-size', 'image-quality'
+            ];
+            
+            let currentSection = '';
+            sections.forEach(sectionId => {
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    const rect = section.getBoundingClientRect();
+                    if (rect.top <= window.innerHeight/2 && rect.bottom >= window.innerHeight/2) {
+                        currentSection = sectionId;
+                    }
+                }
+            });
+
+            if (currentSection) {
+                // Update navigation
+                document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+                document.querySelectorAll('.nav-dot').forEach(dot => dot.classList.remove('active'));
+                
+                // Set active for current section
+                const navLink = document.querySelector(`.nav-links a[href="#${currentSection}"]`);
+                if (navLink) navLink.classList.add('active');
+                
+                const navDot = document.querySelector(`.nav-dot[data-target="${currentSection}"]`);
+                if (navDot) navDot.classList.add('active');
+            }
+        });
+
+        // Sticky navigation effect
+        window.addEventListener('scroll', function() {
+            const nav = document.querySelector('.top-nav');
+            if (window.scrollY > 50) {
+                nav.style.background = 'rgba(255,255,255,0.95)';
+                nav.style.padding = '10px 5%';
+                nav.style.boxShadow = '0 2px 20px rgba(0,0,0,0.1)';
+            } else {
+                nav.style.background = 'rgba(255,255,255,0.85)';
+                nav.style.padding = '15px 5%';
+                nav.style.boxShadow = '0 2px 20px rgba(0,0,0,0.1)';
+            }
+        });
+
+        // Enhanced iframe handling for proper scaling
+        document.querySelectorAll('iframe').forEach(iframe => {
+            // Set loading attribute
+            iframe.setAttribute('loading', 'lazy');
+            
+            // Force proper scaling on load
+            iframe.addEventListener('load', function() {
+                // Ensure the iframe takes full container size
+                this.style.width = '100%';
+                this.style.height = '100%';
+                
+                try {
+                    // Try to hide potential scrollbars in iframe content
+                    if (this.contentDocument) {
+                        this.contentDocument.body.style.overflow = 'hidden';
+                        this.contentDocument.documentElement.style.overflow = 'hidden';
+                        
+                        // Hide any Motion Suss branding if accessible
+                        const brandingElements = this.contentDocument.querySelectorAll('[class*="motion"], [id*="motion"], [class*="suss"], [id*="suss"]');
+                        brandingElements.forEach(el => {
+                            if (el.textContent.includes('Motion Suss')) {
+                                el.style.display = 'none';
+                            }
+                        });
+                    }
+                } catch (e) {
+                    // Cross-origin policy prevents access, which is expected
+                    console.log("Cross-origin iframe - cannot modify content");
+                }
+            });
+            
+            // Handle resize events
+            iframe.addEventListener('resize', function() {
+                this.style.width = '100%';
+                this.style.height = '100%';
+            });
+        });
+
+        // Initialize first load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelector('.nav-links a[href="#home"]').classList.add('active');
+            document.querySelector('.nav-dot[data-target="home"]').classList.add('active');
+            
+            // Force proper scaling for all iframes
+            setTimeout(() => {
+                document.querySelectorAll('iframe').forEach(iframe => {
+                    iframe.style.width = '100%';
+                    iframe.style.height = '100%';
+                });
+            }, 1000);
+        });
+
+        // Window resize handler for responsive scaling
+        window.addEventListener('resize', function() {
+            document.querySelectorAll('iframe').forEach(iframe => {
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+            });
+        });
+    </script>
+</body>
+</html>
