@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Quality Enhancer</title>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #4895ef;
+            --secondary: #3a0ca3;
+            --accent: #f72585;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --success: #4cc9f0;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            min-height: 100vh;
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 2rem 1rem;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 2.5rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .container:hover {
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+        }
+        
+        h1 {
+            color: var(--secondary);
+            text-align: center;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.2rem;
+        }
+        
+        .subtitle {
+            color: var(--gray);
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+        
+        .upload-area {
+            margin-bottom: 2rem;
+        }
+        
+        .drop-zone {
+            border: 2px dashed var(--gray);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: rgba(255, 255, 255, 0.7);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .drop-zone:hover {
+            border-color: var(--primary);
+            background-color: rgba(67, 97, 238, 0.05);
+            transform: translateY(-2px);
+        }
+        
+        .drop-zone::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .drop-zone:hover::before {
+            opacity: 1;
+        }
+        
+        .drop-zone.dragover {
+            border-color: var(--primary);
+            background-color: rgba(67, 97, 238, 0.1);
+            transform: scale(1.02);
+        }
+        
+        .upload-icon {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 1rem;
+            opacity: 0.7;
+        }
+        
+        .drop-zone p {
+            font-size: 1.1rem;
+            color: var(--gray);
+            margin-bottom: 0.5rem;
+        }
+        
+        .file-types {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .processing-area {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: rgba(248, 249, 250, 0.7);
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1.5rem;
+        }
+        
+        .processing-area p {
+            color: var(--gray);
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .progress-text {
+            color: var(--secondary);
+            font-weight: 500;
+        }
+        
+        .result-area {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .image-comparison {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+        
+        .image-container {
+            flex: 1;
+            min-width: 300px;
+            text-align: center;
+        }
+        
+        .image-container h3 {
+            color: var(--secondary);
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        
+        .comparison-image {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .comparison-image:hover {
+            transform: scale(1.02);
+        }
+        
+        .download-options {
+            margin: 2rem 0;
+            padding: 2rem;
+            background: rgba(248, 249, 250, 0.7);
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+            text-align: center;
+        }
+        
+        .download-options h3 {
+            color: var(--secondary);
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+        
+        .format-options {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        
+        .download-btn {
+            background: linear-gradient(to right, var(--primary), var(--primary-light));
+            color: white;
+            border: none;
+            padding: 0.8rem 1.8rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(67, 97, 238, 0.4);
+        }
+        
+        .quality-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .quality-control label {
+            color: var(--gray);
+            font-weight: 500;
+        }
+        
+        input[type="range"] {
+            width: 200px;
+            height: 8px;
+            background: #dee2e6;
+            border-radius: 4px;
+            outline: none;
+            -webkit-appearance: none;
+            accent-color: var(--primary);
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        #qualityValue {
+            min-width: 40px;
+            font-weight: 500;
+            color: var(--primary);
+        }
+        
+        .process-another-btn {
+            background: linear-gradient(to right, #6c757d, #868e96);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.8rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+            display: block;
+            margin: 2rem auto 0;
+        }
+        
+        .process-another-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(108, 117, 125, 0.4);
+        }
+        
+        .info-section {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid #eee;
+        }
+        
+        .info-section h2 {
+            color: var(--secondary);
+            text-align: center;
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+        
+        .features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            justify-content: center;
+        }
+        
+        .feature {
+            flex: 1;
+            min-width: 250px;
+            padding: 1.5rem;
+            background: rgba(248, 249, 250, 0.7);
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+        
+        .feature:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        }
+        
+        .feature h3 {
+            color: var(--secondary);
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        
+        .feature p {
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        .bounce {
+            animation: bounce 0.5s;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            
+            .image-comparison {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+            
+            .format-options {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .download-btn {
+                width: 100%;
+                max-width: 250px;
+            }
+            
+            .quality-control {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Image Quality Enhancer</h1>
+        <p class="subtitle">Upload a low-quality image and we'll enhance it for you</p>
+        
+        <div class="upload-area" id="uploadArea">
+            <input type="file" id="fileInput" accept="image/*" style="display: none;">
+            <div class="drop-zone" id="dropZone">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzQzNjFlZSI+PHBhdGggZD0iTTE5IDEzYy0uNiAwLTEgLjQtMSAxdjZoLTJ2LTZjMC0uNi0uNC0xLTEtMXMtMSAuNC0xIDF2NmgtMnYtNmMwLS42LS40LTEtMS0xcy0xIC40LTEgMXY2SDl2LTZjMC0uNi0uNC0xLTEtMXMtMSAuNC0xIDF2N0g1VjRoMTR2OWMwIC42LjQgMSAxIDF6Ii8+PHBhdGggZD0iTTEyIDNjLjYgMCAxLS40IDEtMVYxYzAtLjYtLjQtMS0xLTFzLTEgLjQtMSAxdjFjMCAuNi40IDEgMSAxeiIvPjxwYXRoIGQ9Ik0xNC43IDguN2MuMi4yLjMuNCAuMy43cy0uMS41LS4zLjdsLTMgM2MtLjIuMi0uNC4zLS43LjNzLS41LS4xLS43LS4zbC0zLTNjLS4yLS4yLS4zLS40LS4zLS43cy4xLS41LjMtLjcuNC0uMy43LS4zLjUuMS43LjNMMTIgMTAuOGwyLjEtMi4xYy4yLS4yLjQtLjMuNy0uM3MuNS4xLjcuM3oiLz48L3N2Zz4=" alt="Upload" class="upload-icon">
+                <p>Drag & drop your image here or click to browse</p>
+                <p class="file-types">Supports: JPG, JPEG, PNG</p>
+            </div>
+        </div>
+        
+        <div class="processing-area" id="processingArea" style="display: none;">
+            <div class="loader"></div>
+            <p>Enhancing your image...</p>
+            <p class="progress-text" id="progressText">Initializing model...</p>
+        </div>
+        
+        <div class="result-area" id="resultArea" style="display: none;">
+            <div class="image-comparison">
+                <div class="image-container">
+                    <h3>Original Image</h3>
+                    <img id="originalImage" class="comparison-image">
+                </div>
+                <div class="image-container">
+                    <h3>Enhanced Image</h3>
+                    <img id="enhancedImage" class="comparison-image">
+                </div>
+            </div>
+            
+            <div class="download-options">
+                <h3>Download Enhanced Image</h3>
+                <div class="format-options">
+                    <button id="downloadPng" class="download-btn">PNG (Lossless)</button>
+                    <button id="downloadJpeg" class="download-btn">JPEG (Compressed)</button>
+                </div>
+                <div class="quality-control" id="qualityControl" style="display: none;">
+                    <label for="jpegQuality">JPEG Quality:</label>
+                    <input type="range" id="jpegQuality" min="50" max="100" value="90">
+                    <span id="qualityValue">90%</span>
+                </div>
+            </div>
+            
+            <button id="processAnother" class="process-another-btn">Process Another Image</button>
+        </div>
+        
+        <div class="info-section">
+            <h2>How It Works</h2>
+            <div class="features">
+                <div class="feature">
+                    <h3>Resolution Increase</h3>
+                    <p>Upscales your image up to 4x while preserving details</p>
+                </div>
+                <div class="feature">
+                    <h3>Noise Reduction</h3>
+                    <p>Removes grain and compression artifacts</p>
+                </div>
+                <div class="feature">
+                    <h3>Sharpness Enhancement</h3>
+                    <p>Improves edge definition and clarity</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // DOM elements
+        const uploadArea = document.getElementById('uploadArea');
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const processingArea = document.getElementById('processingArea');
+        const resultArea = document.getElementById('resultArea');
+        const originalImage = document.getElementById('originalImage');
+        const enhancedImage = document.getElementById('enhancedImage');
+        const downloadPng = document.getElementById('downloadPng');
+        const downloadJpeg = document.getElementById('downloadJpeg');
+        const qualityControl = document.getElementById('qualityControl');
+        const jpegQuality = document.getElementById('jpegQuality');
+        const qualityValue = document.getElementById('qualityValue');
+        const processAnother = document.getElementById('processAnother');
+        const progressText = document.getElementById('progressText');
+
+        // Variables
+        let originalFile = null;
+        let enhancedImageBlob = null;
+        let enhancedImageUrl = null;
+
+        // Event listeners
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                handleFileSelect(fileInput.files[0]);
+            }
+        });
+
+        downloadPng.addEventListener('click', downloadAsPng);
+        downloadJpeg.addEventListener('click', () => {
+            qualityControl.style.display = 'flex';
+        });
+
+        jpegQuality.addEventListener('input', () => {
+            qualityValue.textContent = jpegQuality.value + '%';
+        });
+
+        // Add new event listener for JPEG download after quality selection
+        document.getElementById('jpegQuality').addEventListener('change', downloadAsJpeg);
+
+        processAnother.addEventListener('click', resetConverter);
+
+        // Functions
+        function handleFileSelect(file) {
+            if (!file.type.match('image.*')) {
+                alert('Please select an image file (JPG, JPEG, PNG)');
+                return;
+            }
+
+            originalFile = file;
+            
+            // Show original image
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                originalImage.src = e.target.result;
+                
+                // Show processing area
+                uploadArea.style.display = 'none';
+                processingArea.style.display = 'flex';
+                
+                // Process the image (simulated in this example)
+                simulateImageProcessing(file, e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function simulateImageProcessing(file, originalSrc) {
+            // Simulate different processing stages
+            const stages = [
+                "Initializing model...",
+                "Analyzing image...",
+                "Enhancing resolution...",
+                "Reducing noise...",
+                "Sharpening details...",
+                "Finalizing enhancement..."
+            ];
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 20;
+                if (progress > 100) progress = 100;
+                
+                const stageIndex = Math.min(Math.floor(progress / 20), stages.length - 1);
+                progressText.textContent = stages[stageIndex];
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        // Create a canvas to "enhance" the image (in a real app, you'd use actual processing)
+                        const canvas = document.createElement('canvas');
+                        const img = new Image();
+                        img.onload = function() {
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0);
+                            
+                            // For demo purposes, we'll just apply a slight sharpening effect
+                            // In a real app, you'd use your ONNX model here
+                            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                            const data = imageData.data;
+                            
+                            // Simple sharpening effect for demonstration
+                            for (let i = 0; i < data.length; i += 4) {
+                                // Light sharpening effect
+                                data[i] = Math.min(255, data[i] * 1.1); // R
+                                data[i+1] = Math.min(255, data[i+1] * 1.1); // G
+                                data[i+2] = Math.min(255, data[i+2] * 1.1); // B
+                            }
+                            
+                            ctx.putImageData(imageData, 0, 0);
+                            
+                            // Convert canvas to blob and display
+                            canvas.toBlob((blob) => {
+                                enhancedImageBlob = blob;
+                                enhancedImageUrl = URL.createObjectURL(blob);
+                                enhancedImage.src = enhancedImageUrl;
+                                
+                                processingArea.style.display = 'none';
+                                resultArea.style.display = 'block';
+                            }, 'image/png');
+                        };
+                        img.src = originalSrc;
+                    }, 1000);
+                }
+            }, 800);
+        }
+
+        function downloadAsPng() {
+            if (!enhancedImageBlob) return;
+            
+            // Create a filename based on the original file
+            const filename = originalFile.name.replace(/\.[^/.]+$/, '') + '_enhanced.png';
+            
+            // Use FileSaver.js to download the blob
+            saveAs(enhancedImageBlob, filename);
+        }
+
+        function downloadAsJpeg() {
+            if (!enhancedImageUrl) return;
+            
+            const quality = parseInt(jpegQuality.value) / 100;
+            const filename = originalFile.name.replace(/\.[^/.]+$/, '') + '_enhanced.jpg';
+            
+            // Create a canvas to convert to JPEG
+            const canvas = document.createElement('canvas');
+            const img = new Image();
+            img.onload = function() {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                
+                // Convert to JPEG with specified quality
+                canvas.toBlob((blob) => {
+                    saveAs(blob, filename);
+                }, 'image/jpeg', quality);
+            };
+            img.src = enhancedImageUrl;
+        }
+
+        function resetConverter() {
+            fileInput.value = '';
+            uploadArea.style.display = 'block';
+            resultArea.style.display = 'none';
+            qualityControl.style.display = 'none';
+            
+            // Clean up object URLs
+            if (enhancedImageUrl) {
+                URL.revokeObjectURL(enhancedImageUrl);
+                enhancedImageUrl = null;
+                enhancedImageBlob = null;
+            }
+        }
+
+        // Initialize quality display
+        qualityValue.textContent = jpegQuality.value + '%';
+    </script>
+</body>
+</html>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

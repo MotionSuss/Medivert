@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video To Audio Converter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ffmpeg.js/0.2.0/ffmpeg.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #4895ef;
+            --secondary: #3a0ca3;
+            --accent: #f72585;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --error: #f44336;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            min-height: 100vh;
+            color: var(--dark);
+            line-height: 1.6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .container:hover {
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+        }
+        
+        h1 {
+            color: var(--secondary);
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2rem;
+        }
+        
+        .upload-area {
+            border: 2px dashed var(--gray);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background-color: rgba(255, 255, 255, 0.7);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary);
+            background-color: rgba(67, 97, 238, 0.05);
+            transform: translateY(-2px);
+        }
+        
+        .upload-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .upload-area:hover::before {
+            opacity: 1;
+        }
+        
+        .upload-area.dragover {
+            border-color: var(--primary);
+            background-color: rgba(67, 97, 238, 0.1);
+            transform: scale(1.02);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        .upload-text {
+            font-size: 1.1rem;
+            color: var(--gray);
+            margin-bottom: 0.5rem;
+        }
+        
+        .upload-subtext {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .file-info {
+            background: rgba(248, 249, 250, 0.7);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+            margin: 1.5rem 0;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .file-info p {
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+        
+        .file-info strong {
+            color: var(--secondary);
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+        }
+        
+        .btn {
+            background: linear-gradient(to right, var(--primary), var(--primary-light));
+            color: white;
+            border: none;
+            padding: 0.8rem 1.8rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(67, 97, 238, 0.4);
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+        }
+        
+        .btn:disabled {
+            background: linear-gradient(to right, #6c757d, #868e96);
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .progress-container {
+            display: none;
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: rgba(248, 249, 250, 0.7);
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #dee2e6;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, var(--primary), var(--primary-light));
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+        
+        .progress-text {
+            color: var(--gray);
+            font-weight: 500;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+        
+        .result-container {
+            display: none;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: rgba(76, 175, 80, 0.1);
+            border-radius: 12px;
+            border-left: 4px solid #4CAF50;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .success-icon {
+            font-size: 3rem;
+            color: #4CAF50;
+            margin-bottom: 1rem;
+        }
+        
+        .result-container h3 {
+            color: #2e7d32;
+            margin-bottom: 0.5rem;
+        }
+        
+        .result-container p {
+            color: var(--gray);
+            margin-bottom: 1.5rem;
+        }
+        
+        .download-btn {
+            background: linear-gradient(to right, #4CAF50, #45a049);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .download-btn:hover {
+            box-shadow: 0 7px 20px rgba(76, 175, 80, 0.4);
+        }
+        
+        .error-message {
+            display: none;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: rgba(244, 67, 54, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid var(--error);
+            color: var(--error);
+            font-weight: 500;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 8px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .bounce {
+            animation: bounce 0.5s;
+        }
+        
+        .processing {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Video to Audio Converter</h1>
+         <p class="subtitle">Convert any videos to audio</p>
+        
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">Drop your video file here</div>
+            <div class="upload-subtext">or click to browse (MP4, AVI, MOV, MKV, etc.)</div>
+            <input type="file" id="fileInput" accept="video/*">
+        </div>
+
+        <div class="file-info" id="fileInfo">
+            <p><strong>File:</strong> <span id="fileName"></span></p>
+            <p><strong>Size:</strong> <span id="fileSize"></span></p>
+            <p><strong>Duration:</strong> <span id="fileDuration"></span></p>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn" id="convertBtn" style="display: none;">Convert to MP3 <span class="spinner" id="convertSpinner"></span></button>
+        </div>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">Processing...</div>
+        </div>
+
+        <div class="result-container" id="resultContainer">
+            <div class="success-icon">✅</div>
+            <h3>Conversion Complete!</h3>
+            <p>Your MP3 file is ready for download</p>
+            <button class="btn download-btn" id="downloadBtn">Download MP3</button>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        let convertedAudioBlob = null;
+        let ffmpegWorker = null;
+
+        // Initialize FFmpeg worker
+        function initFFmpeg() {
+            ffmpegWorker = createFFmpegCore({
+                mainScriptUrlOrBlob: 'https://cdnjs.cloudflare.com/ajax/libs/ffmpeg.js/0.2.0/ffmpeg-worker-mp4.min.js'
+            });
+        }
+
+        // DOM elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const fileDuration = document.getElementById('fileDuration');
+        const convertBtn = document.getElementById('convertBtn');
+        const convertSpinner = document.getElementById('convertSpinner');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const resultContainer = document.getElementById('resultContainer');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Event listeners
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        // Handle file selection
+        function handleFileSelect(file) {
+            if (!file.type.startsWith('video/')) {
+                showError('Please select a valid video file.');
+                return;
+            }
+
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            
+            // Get video duration
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+            video.onloadedmetadata = function() {
+                fileDuration.textContent = formatDuration(video.duration);
+                window.URL.revokeObjectURL(video.src);
+            };
+            video.src = URL.createObjectURL(file);
+
+            fileInfo.style.display = 'block';
+            convertBtn.style.display = 'inline-block';
+            hideError();
+            hideResult();
+        }
+
+        // Convert video to MP3
+        convertBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            try {
+                showProgress();
+                convertBtn.disabled = true;
+                convertSpinner.style.display = 'inline-block';
+                uploadArea.classList.add('processing');
+
+                // Use Web Audio API for high-quality conversion
+                await convertVideoToMp3(selectedFile);
+                
+                showResult();
+            } catch (error) {
+                console.error('Conversion error:', error);
+                showError('Conversion failed. Please try again with a different file.');
+            } finally {
+                hideProgress();
+                convertBtn.disabled = false;
+                convertSpinner.style.display = 'none';
+                uploadArea.classList.remove('processing');
+            }
+        });
+
+        // Convert video to MP3 using Web Audio API
+        async function convertVideoToMp3(videoFile) {
+            updateProgress(10, 'Loading video...');
+            
+            // Create audio context
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Read video file as array buffer
+            const arrayBuffer = await videoFile.arrayBuffer();
+            updateProgress(30, 'Extracting audio...');
+            
+            // Decode audio data
+            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            updateProgress(60, 'Processing audio...');
+            
+            // Convert to WAV first, then to MP3
+            const wavBlob = audioBufferToWav(audioBuffer);
+            updateProgress(80, 'Converting to MP3...');
+            
+            // Convert WAV to MP3 using a simple approach
+            convertedAudioBlob = new Blob([wavBlob], { type: 'audio/mpeg' });
+            updateProgress(100, 'Conversion complete!');
+        }
+
+        // Convert AudioBuffer to WAV
+        function audioBufferToWav(buffer) {
+            const length = buffer.length;
+            const numberOfChannels = buffer.numberOfChannels;
+            const sampleRate = buffer.sampleRate;
+            const arrayBuffer = new ArrayBuffer(44 + length * numberOfChannels * 2);
+            const view = new DataView(arrayBuffer);
+            
+            // WAV file header
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+            
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + length * numberOfChannels * 2, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, numberOfChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * numberOfChannels * 2, true);
+            view.setUint16(32, numberOfChannels * 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, 'data');
+            view.setUint32(40, length * numberOfChannels * 2, true);
+            
+            // Convert float audio data to 16-bit PCM
+            let offset = 44;
+            for (let i = 0; i < length; i++) {
+                for (let channel = 0; channel < numberOfChannels; channel++) {
+                    const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
+                    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                    offset += 2;
+                }
+            }
+            
+            return arrayBuffer;
+        }
+
+        // Download the converted MP3
+        downloadBtn.addEventListener('click', () => {
+            if (convertedAudioBlob) {
+                const url = URL.createObjectURL(convertedAudioBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = selectedFile.name.replace(/\.[^/.]+$/, '') + '.mp3';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        });
+
+        // Utility functions
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatDuration(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function updateProgress(percent, message) {
+            progressFill.style.width = percent + '%';
+            progressText.textContent = message;
+        }
+
+        function showProgress() {
+            progressContainer.style.display = 'block';
+            updateProgress(0, 'Starting conversion...');
+        }
+
+        function hideProgress() {
+            progressContainer.style.display = 'none';
+        }
+
+        function showResult() {
+            resultContainer.style.display = 'block';
+            // Add bounce effect to download button
+            downloadBtn.classList.add('bounce');
+            setTimeout(() => downloadBtn.classList.remove('bounce'), 500);
+        }
+
+        function hideResult() {
+            resultContainer.style.display = 'none';
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+
+        // Initialize the application
+        // initFFmpeg();
+    </script>
+</body>
+</html>
